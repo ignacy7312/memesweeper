@@ -23,11 +23,15 @@ private:
 		void ToggleFlag();
 		bool IsFlagged() const;
 		void SetNeighborBombCount(int bombCount);
+		bool IsDug() const;
+		void SetDug();
+		int GetNumberNeighborBombs() const;
 
 	private:
 		State state = State::Hidden;
 		bool hasBomb = false;
 		int nNeighborBombs = -1;
+		bool isDug = false;
 	};
 
 public:
@@ -45,6 +49,8 @@ private:
 	Vei2 ScreenToGrid(const Vei2& screenPos);
 	
 	int CountNeighborBombs(const Vei2& gridPos);
+
+	void Dig(const Vei2& gridPos);
 
 	bool IsWon() const;
 

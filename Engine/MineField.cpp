@@ -37,6 +37,9 @@ MineField::MineField(int nBombs_in)
 
 void MineField::Draw(Graphics& gfx) const
 {
+	if (IsWon()) {
+		SpriteCodex::DrawWin(Vei2(254, 192), gfx);
+	}
 	gfx.DrawRect(borderRect, borderColor);
 	gfx.DrawRect(bgRect, SpriteCodex::baseColor);
 	for (Vei2 gridPos = { 0, 0 }; gridPos.y < height; gridPos.y++) {
@@ -59,9 +62,13 @@ void MineField::OnRevealClick(const Vei2& screenPos)
 		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
 		Tile& tile = TileAt(gridPos);
 		if (!tile.IsRevealed() && !tile.IsFlagged()) {
-			tile.Reveal();
+			//tile.Reveal();
 			if (tile.HasBomb()) {
+				tile.Reveal();
 				isFucked = true;
+			}
+			else {
+				Dig(gridPos);
 			}
 		}
 	}
@@ -112,6 +119,47 @@ int MineField::CountNeighborBombs(const Vei2& gridPos)
 	}
 	return bombCounter;
 }
+
+void MineField::Dig(const Vei2& initPos)
+{
+	Tile& currentTile = TileAt(initPos);
+
+	if (currentTile.HasBomb() || currentTile.IsFlagged()) {
+		return;
+	}
+
+	
+
+	if (currentTile.GetNumberNeighborBombs() > 0 && !currentTile.HasBomb() && !currentTile.IsFlagged()) {
+		if (!currentTile.IsRevealed()) {
+			currentTile.Reveal();
+		}
+		return;
+	}
+	
+	if  (currentTile.GetNumberNeighborBombs() == 0 && !(currentTile.HasBomb() || currentTile.IsFlagged())) {
+		if (!currentTile.IsRevealed()) {
+			currentTile.Reveal();
+		}
+		int xStart = std::max(0, initPos.x - 1);
+		int xEnd = std::min(width - 1, initPos.x + 1);
+		int yStart = std::max(0, initPos.y - 1);
+		int yEnd = std::min(height - 1, initPos.y + 1);
+
+		for (Vei2 pos = { xStart, yStart }; pos.y <= yEnd; pos.y++) {
+			for (pos.x = xStart; pos.x <= xEnd; pos.x++) {
+				if (TileAt(pos).IsRevealed()) {
+					continue;
+				}
+				else {
+					Dig(pos);
+
+				}
+			}
+		}
+	}
+}
+
 
 bool MineField::IsWon() const
 {
@@ -223,4 +271,19 @@ void MineField::Tile::SetNeighborBombCount(int bombCount)
 {
 	assert(nNeighborBombs == -1);   
 	nNeighborBombs = bombCount;
+}
+
+bool MineField::Tile::IsDug() const
+{
+	return isDug;
+}
+
+void MineField::Tile::SetDug()
+{
+	isDug = true;
+}
+
+int MineField::Tile::GetNumberNeighborBombs() const
+{
+	return nNeighborBombs;
 }
