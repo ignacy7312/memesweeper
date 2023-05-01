@@ -39,7 +39,7 @@ void MineField::Draw(Graphics& gfx) const
 	gfx.DrawRect(bgRect, SpriteCodex::baseColor);
 	for (Vei2 gridPos = { 0, 0 }; gridPos.y < height; gridPos.y++) {
 		for (gridPos.x = 0; gridPos.x < width; gridPos.x++) {
-			TileAt(gridPos).Draw(gfx, gridPos * SpriteCodex::tileSize);
+			TileAt(gridPos).Draw(gfx, isFucked, gridPos * SpriteCodex::tileSize);
 		}
 	}
 }
@@ -51,21 +51,28 @@ RectI MineField::GetRect() const
 
 void MineField::OnRevealClick(const Vei2& screenPos)
 {
-	const Vei2 gridPos = ScreenToGrid(screenPos);
-	assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
-	Tile& tile = TileAt(gridPos);
-	if (!tile.IsRevealed() && !tile.IsFlagged()) {
-		tile.Reveal();
+	if (!isFucked){
+		const Vei2 gridPos = ScreenToGrid(screenPos);
+		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
+		Tile& tile = TileAt(gridPos);
+		if (!tile.IsRevealed() && !tile.IsFlagged()) {
+			tile.Reveal();
+			if (tile.HasBomb()) {
+				isFucked = true;
+			}
+		}
 	}
 }
 
 void MineField::OnFlagClick(const Vei2& screenPos)
 {
-	const Vei2 gridPos = ScreenToGrid(screenPos);
-	assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
-	Tile& tile = TileAt(gridPos);
-	if (!tile.IsRevealed()) {
-		tile.ToggleFlag();
+	if (!isFucked){
+		const Vei2 gridPos = ScreenToGrid(screenPos);
+		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
+		Tile& tile = TileAt(gridPos);
+		if (!tile.IsRevealed()) {
+			tile.ToggleFlag();
+		}
 	}
 }
 
@@ -113,25 +120,59 @@ bool MineField::Tile::HasBomb() const
 	return hasBomb;
 }
 
-void MineField::Tile::Draw(Graphics & gfx, const Vei2& screenPos) const
+void MineField::Tile::Draw(Graphics & gfx, bool fucked, const Vei2& screenPos) const
 {
-	switch (state)
-	{
-	case State::Hidden:
-		SpriteCodex::DrawTileButton(screenPos, gfx);
-		break;
-	case State::Flagged:
-		SpriteCodex::DrawTileButton(screenPos, gfx);
-		SpriteCodex::DrawTileFlag(screenPos, gfx);
-		break;
-	case State::Revealed:
-		if (hasBomb) {
-			SpriteCodex::DrawTileBomb(screenPos, gfx);
+	if (fucked){
+		switch (state)
+		{
+		case State::Hidden:
+			if (HasBomb()) {
+				SpriteCodex::DrawTileBomb(screenPos, gfx);
+			}
+			else {
+				SpriteCodex::DrawTileButton(screenPos, gfx);
+			}
+			break;
+
+		case State::Flagged:
+			if (HasBomb()) {
+				SpriteCodex::DrawTileBomb(screenPos, gfx);
+				SpriteCodex::DrawTileFlag(screenPos, gfx);
+			}
+			else {
+				SpriteCodex::DrawTileBomb(screenPos, gfx);
+				SpriteCodex::DrawTileCross(screenPos, gfx);
+			}
+			break;
+		case State::Revealed:
+			if (HasBomb()) {
+				SpriteCodex::DrawTileBombRed(screenPos, gfx);
+			}
+			else {
+				SpriteCodex::DrawTileNumber(screenPos, nNeighborBombs, gfx);
+			}
+			break;
 		}
-		else {
-			SpriteCodex::DrawTileNumber(screenPos,nNeighborBombs, gfx);
+	}
+	else { //not fucked
+		switch (state)
+		{
+		case State::Hidden:
+			SpriteCodex::DrawTileButton(screenPos, gfx);
+			break;
+		case State::Flagged:
+			SpriteCodex::DrawTileButton(screenPos, gfx);
+			SpriteCodex::DrawTileFlag(screenPos, gfx);
+			break;
+		case State::Revealed:
+			if (hasBomb) {
+				SpriteCodex::DrawTileBomb(screenPos, gfx);
+			}
+			else {
+				SpriteCodex::DrawTileNumber(screenPos, nNeighborBombs, gfx);
+			}
+			break;
 		}
-		break;
 	}
 }
 

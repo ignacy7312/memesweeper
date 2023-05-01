@@ -17,7 +17,7 @@ private:
 	public:
 		void SpawnBomb();
 		bool HasBomb() const;
-		void Draw(Graphics& gfx, const Vei2& screenPos) const;
+		void Draw(Graphics& gfx, bool fucked, const Vei2& screenPos) const;
 		bool IsRevealed() const;
 		void Reveal();
 		void ToggleFlag();
@@ -51,5 +51,7 @@ private:
 	int nBombs;
 	
 	RectI bgRect = { 0, width * SpriteCodex::tileSize, 0, height * SpriteCodex::tileSize };
+
+	bool isFucked = false;
 
 };
