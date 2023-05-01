@@ -11,6 +11,7 @@ MineField::MineField(int nBombs_in)
 {
 	assert(nBombs_in > 0 && nBombs_in < width* height);
 	nBombs = nBombs_in;
+	nBombsRemaining = nBombs;
 
 	std::random_device rd;
 	std::mt19937 rng(rd());
@@ -36,12 +37,14 @@ MineField::MineField(int nBombs_in)
 
 void MineField::Draw(Graphics& gfx) const
 {
+	gfx.DrawRect(borderRect, borderColor);
 	gfx.DrawRect(bgRect, SpriteCodex::baseColor);
 	for (Vei2 gridPos = { 0, 0 }; gridPos.y < height; gridPos.y++) {
 		for (gridPos.x = 0; gridPos.x < width; gridPos.x++) {
 			TileAt(gridPos).Draw(gfx, isFucked, gridPos * SpriteCodex::tileSize);
 		}
 	}
+
 }
 
 RectI MineField::GetRect() const
@@ -51,7 +54,7 @@ RectI MineField::GetRect() const
 
 void MineField::OnRevealClick(const Vei2& screenPos)
 {
-	if (!isFucked){
+	if (!isFucked && !IsWon()){
 		const Vei2 gridPos = ScreenToGrid(screenPos);
 		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
 		Tile& tile = TileAt(gridPos);
@@ -66,7 +69,7 @@ void MineField::OnRevealClick(const Vei2& screenPos)
 
 void MineField::OnFlagClick(const Vei2& screenPos)
 {
-	if (!isFucked){
+	if (!isFucked && !IsWon()){
 		const Vei2 gridPos = ScreenToGrid(screenPos);
 		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
 		Tile& tile = TileAt(gridPos);
@@ -88,7 +91,8 @@ const MineField::Tile& MineField::TileAt(const Vei2& gridPos) const
 
 Vei2 MineField::ScreenToGrid(const Vei2& screenPos)
 {
-	return screenPos / SpriteCodex::tileSize;
+	Vei2 offset = { boardTopLeftX, boardTopLeftY };
+	return (screenPos - offset) / SpriteCodex::tileSize;
 }
 
 int MineField::CountNeighborBombs(const Vei2& gridPos)
@@ -109,6 +113,16 @@ int MineField::CountNeighborBombs(const Vei2& gridPos)
 	return bombCounter;
 }
 
+bool MineField::IsWon() const
+{
+	if (nBombsRemaining == 0 && nBombsCorrectlyFlagged == nBombs) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void MineField::Tile::SpawnBomb()
 {
 	assert(!hasBomb);
@@ -120,8 +134,10 @@ bool MineField::Tile::HasBomb() const
 	return hasBomb;
 }
 
-void MineField::Tile::Draw(Graphics & gfx, bool fucked, const Vei2& screenPos) const
+void MineField::Tile::Draw(Graphics & gfx, bool fucked, Vei2& screenPos) const
 {
+	Vei2 offset(boardTopLeftX, boardTopLeftY);
+	screenPos += offset;
 	if (fucked){
 		switch (state)
 		{
