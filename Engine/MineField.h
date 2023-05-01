@@ -23,15 +23,14 @@ private:
 		void ToggleFlag();
 		bool IsFlagged() const;
 		void SetNeighborBombCount(int bombCount);
-		bool IsDug() const;
-		void SetDug();
 		int GetNumberNeighborBombs() const;
+		bool IsCorrectlyFlagged() const;
 
 	private:
 		State state = State::Hidden;
 		bool hasBomb = false;
 		int nNeighborBombs = -1;
-		bool isDug = false;
+		bool correctlyFlagged = false;
 	};
 
 public:

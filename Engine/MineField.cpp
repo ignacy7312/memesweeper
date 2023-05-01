@@ -37,9 +37,7 @@ MineField::MineField(int nBombs_in)
 
 void MineField::Draw(Graphics& gfx) const
 {
-	if (IsWon()) {
-		SpriteCodex::DrawWin(Vei2(254, 192), gfx);
-	}
+
 	gfx.DrawRect(borderRect, borderColor);
 	gfx.DrawRect(bgRect, SpriteCodex::baseColor);
 	for (Vei2 gridPos = { 0, 0 }; gridPos.y < height; gridPos.y++) {
@@ -47,7 +45,9 @@ void MineField::Draw(Graphics& gfx) const
 			TileAt(gridPos).Draw(gfx, isFucked, gridPos * SpriteCodex::tileSize);
 		}
 	}
-
+	if (IsWon()) {
+		SpriteCodex::DrawWin(Vei2(254, 192), gfx);
+	}
 }
 
 RectI MineField::GetRect() const
@@ -163,12 +163,14 @@ void MineField::Dig(const Vei2& initPos)
 
 bool MineField::IsWon() const
 {
-	if (nBombsRemaining == 0 && nBombsCorrectlyFlagged == nBombs) {
-		return true;
+	int flagCount = 0;
+	for (const Tile& tile : field) {
+		if (tile.IsCorrectlyFlagged()) {
+			flagCount++;
+		}
 	}
-	else {
-		return false;
-	}
+	return flagCount == nBombs;
+
 }
 
 void MineField::Tile::SpawnBomb()
@@ -260,6 +262,7 @@ void MineField::Tile::ToggleFlag()
 	else {
 		state = State::Hidden;
 	}
+	correctlyFlagged = HasBomb();
 }
 
 bool MineField::Tile::IsFlagged() const
@@ -273,17 +276,13 @@ void MineField::Tile::SetNeighborBombCount(int bombCount)
 	nNeighborBombs = bombCount;
 }
 
-bool MineField::Tile::IsDug() const
-{
-	return isDug;
-}
-
-void MineField::Tile::SetDug()
-{
-	isDug = true;
-}
 
 int MineField::Tile::GetNumberNeighborBombs() const
 {
 	return nNeighborBombs;
+}
+
+bool MineField::Tile::IsCorrectlyFlagged() const
+{
+	return correctlyFlagged;
 }
