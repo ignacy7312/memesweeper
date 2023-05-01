@@ -24,7 +24,8 @@
 Game::Game( MainWindow& wnd )
 	:
 	wnd( wnd ),
-	gfx( wnd )
+	gfx( wnd ),
+	field(20)
 {
 }
 
@@ -38,8 +39,25 @@ void Game::Go()
 
 void Game::UpdateModel()
 {
+	while (!wnd.mouse.IsEmpty())
+	{
+		const Mouse::Event e = wnd.mouse.Read();
+		if (e.GetType() == Mouse::Event::Type::LPress)
+		{
+			const Vei2 mousePos = { e.GetPosX(), e.GetPosY()};
+			if (field.GetRect().Contains(mousePos)) {
+				field.OnRevealClick(mousePos);
+			}
+		} else if (e.GetType() == Mouse::Event::Type::RPress) {
+			const Vei2 mousePos = { e.GetPosX(), e.GetPosY() };
+			if (field.GetRect().Contains(mousePos)) {
+				field.OnFlagClick(mousePos);
+			}
+		}
+	}
 }
 
 void Game::ComposeFrame()
 {
+	field.Draw(gfx);
 }
